@@ -1,0 +1,26 @@
+<div id="page-admin-index">
+	<div class="box generalbox adminwarning">
+		<h2 style="text-align: center"><?php print_string("modulename", "enrol_request") ?></h2>
+		<p style="padding-left: 100px;"><?php print_string("status", "enrol_request") ?>: <strong><?php print_string("status".$request->status, "enrol_request") ?></strong></p>
+		<p style="padding-left: 100px;"><?php print_string("timesubmitted", "enrol_request") ?>: <strong><?php echo userdate($request->timesubmitted) ?></strong></p>
+
+<?php
+	if($request->status == STATUS_PENDING) {
+?>		
+		<div class="singlebutton">
+			<form action="<?php echo $CFG->wwwroot?>/enrol/request/request.php">
+				<input type="hidden" name="enrolid" value="<?php echo $instance->id?>"/>
+				<button><?php print_string("buttonreviewenrollment", "enrol_request") ?></button>
+			</form>
+		</div>
+		<div class="singlebutton">
+			<form action="<?php echo $CFG->wwwroot?>/enrol/request/unenrol.php">
+				<input type="hidden" name="enrolrequestid" value="<?php echo $request->id ?>"/>
+				<button><?php print_string("buttondeleteenrollment", "enrol_request") ?></button>
+			</form>
+		</div>
+<?php
+	}
+?>		
+	</div>
+</div>

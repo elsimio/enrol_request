@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="enrol/request/db" VERSION="20100716" COMMENT="XMLDB file for enrol/request plugin"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="enrol_request" COMMENT="Required Module table to store instance data." NEXT="enrol_request_questions">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" ENUM="false" NEXT="enrolid"/>
+        <FIELD NAME="enrolid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" COMMENT="Enrollment (mdl_enrol) this instance belongs to" PREVIOUS="id" NEXT="name"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" ENUM="false" COMMENT="topic field for moodle instances" PREVIOUS="enrolid" NEXT="deadline"/>
+		<FIELD NAME="deadline" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="name" NEXT="canresubmit"/>
+        <FIELD NAME="canresubmit" TYPE="int" LENGTH="2" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="deadline" NEXT="maxenroldays"/>
+        <FIELD NAME="maxenroldays" TYPE="int" LENGTH="5" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="canresubmit" NEXT="timemodified"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="maxenroldays" NEXT="isselfenrollment"/>
+        <FIELD NAME="isselfenrollment" TYPE="int" LENGTH="2" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="timemodified" />
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="enrol_request_enrolid" UNIQUE="false" FIELDS="enrolid"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="enrol_request_questions" COMMENT="Custom questions for each instance." PREVIOUS="enrol_request" NEXT="enrol_request_requests">
+        <FIELDS>
+            <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" ENUM="false" NEXT="enrolrequestid"/>
+            <FIELD NAME="enrolrequestid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" COMMENT="Which instance this question belongs to." PREVIOUS="id" NEXT="questiontext"/>            
+            <FIELD NAME="questiontext" TYPE="text" LENGTH="medium" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="enrolrequestid"/>
+        </FIELDS>
+        <KEYS>
+            <KEY NAME="enrol_request_questions_primary" TYPE="primary" FIELDS="id" NEXT="enrol_request_questions_enrolrequestid"/>
+            <KEY NAME="enrol_request_questions_enrolrequestid" TYPE="foreign" FIELDS="enrolrequestid" REFTABLE="enrol_request" REFFIELDS="id" PREVIOUS="enrol_request_questions_primary"/>
+        </KEYS>
+    </TABLE>
+    <TABLE NAME="enrol_request_requests" COMMENT="All submitted requests for enrollment." PREVIOUS="enrol_request_questions" NEXT="enrol_request_responses">
+        <FIELDS>
+            <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" ENUM="false" NEXT="enrolrequestid"/>
+            <FIELD NAME="enrolrequestid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="id" NEXT="userid"/>
+            <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="enrolrequestid" NEXT="status"/>
+            <FIELD NAME="status" TYPE="int" LENGTH="2" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="userid" NEXT="timesubmitted"/>
+            <FIELD NAME="timesubmitted" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="status" NEXT="timeselected"/>
+            <FIELD NAME="timeselected" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="timesubmitted" NEXT="notified"/>
+            <FIELD NAME="notified" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="timeselected"/>
+        </FIELDS> 
+        <KEYS>
+            <KEY NAME="enrol_request_requests_primary" TYPE="primary" FIELDS="id" NEXT="enrol_request_requests_enrolrequestid"/>
+            <KEY NAME="enrol_request_requests_enrolrequestid" TYPE="foreign" FIELDS="enrolrequestid" REFTABLE="enrol_request" REFFIELDS="id" PREVIOUS="enrol_request_requests_primary"/>
+        </KEYS>
+        <INDEXES>
+            <INDEX NAME="enrol_request_requests_userid" UNIQUE="false" FIELDS="userid" NEXT="enrol_request_requests_status"/>
+            <INDEX NAME="enrol_request_requests_status" UNIQUE="false" FIELDS="status" PREVIOUS="enrol_request_requests_userid"/>            
+        </INDEXES>
+    </TABLE>
+    <TABLE NAME="enrol_request_responses" COMMENT="Custom question responses." PREVIOUS="enrol_request_requests">
+        <FIELDS>
+            <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" ENUM="false" NEXT="requestid"/>
+            <FIELD NAME="requestid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="id" NEXT="questionid"/>
+            <FIELD NAME="questionid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="requestid" NEXT="response"/>
+            <FIELD NAME="response" TYPE="text" LENGTH="medium" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="questionid"/>
+        </FIELDS>
+        <KEYS>
+            <KEY NAME="enrol_request_responses_primary" TYPE="primary" FIELDS="id" NEXT="enrol_request_responses_requestid"/>
+            <KEY NAME="enrol_request_responses_requestid" TYPE="foreign" FIELDS="requestid" REFTABLE="enrol_request_requests" REFFIELDS="id" PREVIOUS="enrol_request_responses_primary" NEXT="enrol_request_responses_questionid"/>
+            <KEY NAME="enrol_request_responses_questionid" TYPE="foreign" FIELDS="questionid" REFTABLE="enrol_request_questions" REFFIELDS="id" PREVIOUS="enrol_request_responses_requestid"/>
+        </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>

@@ -1,0 +1,23 @@
+/**
+ * Style sheet for Enrollment Request plugin
+ * 
+ * @package   enrol_request
+ * @copyright 2012 Inter-American Development Bank (http://www.iadb.org)
+ * @author    Maiquel Sampaio de Melo
+ * 
+ * Based on work of Michael Avelar <mavelar@moodlerooms.com> and Lucas Sa (lucast@iadb.org)
+ */
+
+/**
+ * Styles for manage.php
+ **/
+.enrol-request-center-text {
+    text-align: center;
+	padding-bottom: 20px;
+    padding-top: 20px;    
+}
+
+table.enrol-request-center-table {
+    margin-left:auto;
+    margin-right:auto;
+}
