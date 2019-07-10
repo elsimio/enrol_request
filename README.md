@@ -1,6 +1,6 @@
 # enrol_request
 The enrolment plugin "enrol request" add a request step with questions into the course enrolment process. Users will be informed by mail as soon as their course application has been changed of status. The plugin can handle 10 different status. This plugin can work to accept payments with the plugin enrol_paypalrequest and stripe payment.
-Steps to install and use the plugin:
+Steps to install and use the plugin:<br>
 1- Unzip the file inside of your ~/moodle/enrol/ folder
 2- Go to the Enrolment methods from any course and add the method called "INDES Enrollment Request"
 3- After that you can create questions to the enrolment created
