@@ -27,7 +27,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot. '/user/profile/lib.php');
 require_once($CFG->dirroot. '/enrol/locallib.php');
 require_once($CFG->dirroot. '/enrol/paypalrequest/lib.php');
-require_once($CFG->dirroot. '/enrol/stripepayment/lib.php');
+require_once($CFG->dirroot. '/enrol/striperequest/lib.php');
 require_once($CFG->libdir . '/enrollib.php');
 
 define("STATUS_PENDING", 				0);
@@ -43,23 +43,23 @@ define("STATUS_ENROLLED_NO_INDES",	    9);
 
 define("TYPE_SELECTION_REGULAR",	"REGULAR");
 define("TYPE_SELECTION_SCHOLARSHIP", "SCHOLARSHIP");
- 
+
 class enrol_request_plugin extends enrol_plugin {
-	
+
 	public function get_info_icons(array $instances) {
 		return array(new pix_icon('icon', get_string('pluginname', 'enrol_request'), 'enrol_request'));
 	}
-	
+
 	public function roles_protected() {
 		// users with role assign cap may tweak the roles later
 		return false;
 	}
-	
+
 	public function allow_unenrol(stdClass $instance) {
 		// users with unenrol cap may unenrol other users manually - requires enrol/request:unenrol
 		return true;
 	}
-	
+
 	public function allow_manage(stdClass $instance) {
 		// users with manage cap may tweak period and status - requires enrol/request:manage
 		return true;
@@ -68,7 +68,7 @@ class enrol_request_plugin extends enrol_plugin {
 	public function show_enrolme_link(stdClass $instance) {
 		return ($instance->status == ENROL_INSTANCE_ENABLED);
 	}
-	
+
 	/**
 	 * Sets up navigation entries.
 	 *
@@ -80,13 +80,13 @@ class enrol_request_plugin extends enrol_plugin {
 			 throw new coding_exception('Invalid enrol instance type!');
 		}
 
-        $context = context_course::instance($instance->courseid);		
+        $context = context_course::instance($instance->courseid);
 		if (has_capability('enrol/request:config', $context)) {
 			$managelink = new moodle_url('/enrol/request/edit.php', array('courseid'=>$instance->courseid, 'id'=>$instance->id));
 			$instancesnode->add($this->get_instance_name($instance), $managelink, navigation_node::TYPE_SETTING);
 		}
 	}
-	
+
 	/**
 	 * Returns edit icons for the page with list of instances
 	 * @param stdClass $instance
@@ -94,14 +94,14 @@ class enrol_request_plugin extends enrol_plugin {
 	 */
 	public function get_action_icons(stdClass $instance) {
 		global $OUTPUT;
-		
+
 		if ($instance->enrol !== 'request') {
 			throw new coding_exception('invalid enrol instance!');
 		}
         $context = context_course::instance($instance->courseid);
-		
+
 		$icons = array();
-		
+
 		if (has_capability('enrol/request:manage', $context)) {
 			$managelink = new moodle_url("/enrol/request/manage.php", array('enrolid'=>$instance->id));
 			$icons[] = $OUTPUT->action_icon($managelink, new pix_icon('i/users', get_string('managerequests', 'enrol_request'), 'core', array('class'=>'iconsmall')));
@@ -113,11 +113,11 @@ class enrol_request_plugin extends enrol_plugin {
                 get_string('edit'),
                 'core',
                 array('class' => 'iconsmall')));
-        }		
-		
+        }
+
 		return $icons;
 	}
-	
+
     /**
      * Is it possible to hide/show enrol instance via standard UI?
      * @param  stdClass $instance
@@ -137,8 +137,8 @@ class enrol_request_plugin extends enrol_plugin {
     public function can_delete_instance($instance) {
             $context = context_course::instance($instance->courseid);
             return has_capability('enrol/request:config', $context);
-    }	
-	
+    }
+
 	/**
 	 * Returns link to page which may be used to add new instance of enrolment plugin in course.
 	 * @param int $courseid
@@ -154,7 +154,7 @@ class enrol_request_plugin extends enrol_plugin {
 		// multiple instances supported - different cost for different roles
 		return new moodle_url('/enrol/request/edit.php', array('courseid'=>$courseid));
 	}
-	
+
 	/**
 	 * Creates course enrol form, checks if form submitted
 	 * and enrols user if necessary. It can also redirect.
@@ -164,31 +164,31 @@ class enrol_request_plugin extends enrol_plugin {
 	 */
 	function enrol_page_hook(stdClass $instance) {
 		global $CFG, $USER, $OUTPUT, $PAGE, $DB;
-		
+
 		ob_start();
-		
+
 		if ($DB->record_exists('user_enrolments', array('userid'=>$USER->id, 'enrolid'=>$instance->id))) {
 			return ob_get_clean();
 		}
-		
+
 		if ($instance->enrolstartdate != 0 && $instance->enrolstartdate > time()) {
 			return ob_get_clean();
 		}
-		
+
 		if ($instance->enrolenddate != 0 && $instance->enrolenddate < time()) {
 			return ob_get_clean();
 		}
-		
+
 		$course = $DB->get_record('course', array('id'=>$instance->courseid));
 		$enrolrequest = $DB->get_record('enrol_request', array('enrolid'=>$instance->id));
-		$request = $DB->get_record('enrol_request_requests', array('enrolrequestid' => $enrolrequest->id, 'userid' => $USER->id), '*');			
-		
-        $context = context_course::instance($instance->courseid);		
+		$request = $DB->get_record('enrol_request_requests', array('enrolrequestid' => $enrolrequest->id, 'userid' => $USER->id), '*');
+
+        $context = context_course::instance($instance->courseid);
 
 		$shortname = format_string($course->shortname, true, array('context' => $context));
 		$strloginto = get_string("loginto", "", $shortname);
 		$strcourses = get_string("courses");
-		
+
 		// force login only for guest user, not real users with guest role
 		if (isguestuser()) {
 				if (empty($CFG->loginhttps)) {
@@ -202,19 +202,19 @@ class enrol_request_plugin extends enrol_plugin {
 				echo '<p><b>'.get_string('guestlogininfo', 'enrol_request').'</b></p>';
 				echo '<p><a href="'.$wwwroot.'/login/">'.get_string('login').'</a></p>';
 				echo '</div>';
-				
+
 		// All users that have submitted a request should be able to see their status
 		} else if(!is_null($request) && is_object($request)) {
 			require_once("$CFG->dirroot/enrol/request/form.php");
 			$form = new enrol_request_form(null, $instance);
 
 			$instanceid = optional_param('instance', 0, PARAM_INT);
-			
+
 			if($request->status == STATUS_SELECTED || $request->status == STATUS_SELECTED_SCHOLARSHIP){
 				$paypalInstance = new enrol_paypalrequest_plugin();
-				$stripeInstance = new enrol_stripepayment_plugin();
+				$stripeRequestInstance = new enrol_striperequest_plugin();
 				//enrol_page_hook
-				
+
 			    $instances = enrol_get_instances($course->id, false);
 			    foreach ($instances as $instance) {
 			        if ($instance->enrol == 'paypalrequest' and $request->status == STATUS_SELECTED and trim($instance->name) == TYPE_SELECTION_REGULAR) {
@@ -222,37 +222,37 @@ class enrol_request_plugin extends enrol_plugin {
 			        	$instance->userselected = TRUE;
 						echo $paypalInstance->enrol_page_hook($instance);
 						break;
-						
+
 			        } elseif ($instance->enrol == 'paypalrequest' and $request->status == STATUS_SELECTED_SCHOLARSHIP and trim($instance->name) == TYPE_SELECTION_SCHOLARSHIP) {
 			        	// Mark that the user was selected so that he can see the Paypal form
 			        	$instance->userselected = TRUE;
 						echo $paypalInstance->enrol_page_hook($instance);
 						break;
-			        } elseif ($instance->enrol == 'stripepayment' and $request->status == STATUS_SELECTED and trim($instance->name) == TYPE_SELECTION_REGULAR) {
+			        } elseif ($instance->enrol == 'striperequest' and $request->status == STATUS_SELECTED and trim($instance->name) == TYPE_SELECTION_REGULAR) {
 			        	// Mark that the user was selected so that he can see the Stripe form
 			        	$instance->userselected = TRUE;
-						echo $stripeInstance->enrol_page_hook($instance);						
+						echo $stripeRequestInstance->enrol_page_hook($instance);
 						break;
-						
-			        } elseif ($instance->enrol == 'stripepayment' and $request->status == STATUS_SELECTED_SCHOLARSHIP and trim($instance->name) == TYPE_SELECTION_SCHOLARSHIP) {
+
+			        } elseif ($instance->enrol == 'striperequest' and $request->status == STATUS_SELECTED_SCHOLARSHIP and trim($instance->name) == TYPE_SELECTION_SCHOLARSHIP) {
 			        	// Mark that the user was selected so that he can see the Stripe form
 			        	$instance->userselected = TRUE;
-						echo $stripeInstance->enrol_page_hook($instance);						
+						echo $stripeRequestInstance->enrol_page_hook($instance);
 						break;
-			        }					
+			        }
 			    }
 			} else {
 				include($CFG->dirroot.'/enrol/request/enrolstatus.html');
 			}
-			
+
 		} elseif ($enrolrequest->deadline > time()) {
 			include($CFG->dirroot.'/enrol/request/enrol.html');
 		} else {
 			echo "<br>";
-			echo $OUTPUT->container(get_string('deadlineHasPassed', 'enrol_request'), 'generalbox', 'notice');			
+			echo $OUTPUT->container(get_string('deadlineHasPassed', 'enrol_request'), 'generalbox', 'notice');
 		}
-		
-		return $OUTPUT->box(ob_get_clean());		
+
+		return $OUTPUT->box(ob_get_clean());
 	}
 
 	/**
@@ -264,15 +264,15 @@ class enrol_request_plugin extends enrol_plugin {
 	 */
 	public function add_instance($course, array $fields = NULL) {
 		global $DB;
-		
+
 		if ($DB->record_exists('enrol', array('courseid'=>$course->id, 'enrol'=>'request'))) {
 			// only one instance is allowed
 			return NULL;
 		}
-		
+
 		// New enrollment instance
 		$enrolid = parent::add_instance($course, $fields);
-		
+
 		// Create new instance of enrol_request
 		$instance = new stdClass;
 		$instance->enrolid			= $enrolid;
@@ -282,9 +282,9 @@ class enrol_request_plugin extends enrol_plugin {
 		$instance->isselfenrollment = $fields['isselfenrollment'];
 		$instance->maxenroldays	 	= $fields['maxenroldays'];
 		$instance->timemodified	 	= time();
-		
+
 		$enrolrequestid = $DB->insert_record('enrol_request', $instance);
-		
+
 		return $enrolid;
 	}
 
@@ -296,9 +296,9 @@ class enrol_request_plugin extends enrol_plugin {
 	 **/
 	function update_instance($enrolrequest, $data) {
 		global $DB;
-		
+
 		$status = true;
-		
+
 		// Create update instance object
 		$instance = new stdClass;
 		$instance->id               = $enrolrequest->id;
@@ -308,12 +308,12 @@ class enrol_request_plugin extends enrol_plugin {
 		$instance->maxenroldays     = $enrolrequest->maxenroldays;
 		$instance->timemodified     = time();
 		$instance->isselfenrollment = (isset($enrolrequest->isselfenrollment))?$enrolrequest->isselfenrollment:0;
-		
+
 		$status = $DB->update_record('enrol_request', $instance);
-		
+
 	    return $status;
 	}
-	
+
     /**
      * Gets an array of the user enrolment actions
      *
@@ -327,28 +327,28 @@ class enrol_request_plugin extends enrol_plugin {
         $instance = $ue->enrolmentinstance;
         $params = $manager->get_moodlepage()->url->params();
         $params['ue'] = $ue->id;
-		
+
         if (has_capability("enrol/request:enabledisable", $context)) {
-        	
+
 			switch ($ue->status) {
 				case ENROL_INSTANCE_ENABLED:
 		            $url = new moodle_url('/enrol/request/disableenrollment.php', $params);
 		            $actions[] = new user_enrolment_action(new pix_icon('i/hide', ''), get_string('disableenrollment', 'enrol_request'), $url, array('class'=>'unenrollink', 'rel'=>$ue->id));
 					break;
-			
+
 				case ENROL_INSTANCE_DISABLED:
 		            $url = new moodle_url('/enrol/request/enableenrollment.php', $params);
 		            $actions[] = new user_enrolment_action(new pix_icon('i/show', ''), get_string('enableenrollment', 'enrol_request'), $url, array('class'=>'enrollink', 'rel'=>$ue->id));
-					break;	
-			
+					break;
+
 			}
         }
-		
+
 		if (has_capability("enrol/request:delete", $context)) {
             $urldelete = new moodle_url('/enrol/request/deleteenrollment.php', $params);
             $actions[] = new user_enrolment_action(new pix_icon('t/delete', ''), get_string('deleteenrollment', 'enrol_request'), $urldelete, array('class'=>'enrollink', 'rel'=>$ue->id));
 		}
-		
+
         return $actions;
     }
 }
@@ -359,33 +359,33 @@ class enrol_request_plugin extends enrol_plugin {
 
 function enrol_request_save_request($formdata, $enrolid) {
 	global $USER, $DB;
-	
+
 	// instance of the enrollment request plugin associated to this course
 	$enrollment = $DB->get_record('enrol_request', array('enrolid' => $enrolid));
-	
+
 	// add three additional fields
 	$formdata->modid = $enrollment->id;
 	$formdata->userid = $USER->id;
 	$formdata->timesubmitted = time ();
-	
+
 	// If this is a self-enrollment, request status must be 'enrolled'
 	if($enrollment->isselfenrollment) {
-		$formdata->status = STATUS_ENROLLED; 
-	}	
-	
+		$formdata->status = STATUS_ENROLLED;
+	}
+
 	if ($requestid = $DB->insert_record('enrol_request_requests', $formdata )) {
-	
+
 		// If this is a self-enrollment, the participant must be enrolled
 		if($enrollment->isselfenrollment) {
 			$requestee = $DB->get_record('user', array('id' => $formdata->userid));
-			
-/*
+
+			/*
 			if (!enrol_into_course($course, $requestee, 'manual')) {
 				return false;
 			}*/
 
 		}
-		
+
 		if ($additionalqs = $DB->get_records( 'enrol_request_questions', array('enrolrequestid' => $enrollment->id))) {
 			foreach ( $additionalqs as $q ) {
 				$fname = 'q' . $q->id;
@@ -402,7 +402,7 @@ function enrol_request_save_request($formdata, $enrolid) {
 			}
 			return true;
 		}
-		
+
 		return true;
 	}
 	return false;
@@ -416,13 +416,13 @@ function enrol_request_save_request($formdata, $enrolid) {
  */
 function enrol_request_get_instances($enrolrequestid, $status=NULL) {
 	global $DB, $CFG;
-	
+
 	if (is_null($status)) {
 	    return $DB->get_records('enrol_request_requests', array('enrolrequestid'=>$enrolrequestid), 'id');
 	}
-	
+
 	$result = $DB->get_records('enrol_request_requests', array('enrolrequestid'=>$enrolrequestid, 'status'=>$status), 'id');
-	
+
 	return $result;
 }
 
@@ -434,7 +434,7 @@ function enrol_request_get_instances($enrolrequestid, $status=NULL) {
  **/
 function mod_enrol_request_profile_user_record($userid) {
     global $CFG;
-	
+
 	// Load library to get all custom profile fields and values
     require_once($CFG->dirroot.'/user/profile/lib.php');
 
@@ -460,9 +460,9 @@ function mod_enrol_request_profile_user_record($userid) {
  */
 function enrol_request_get_course_from_request($enrolrequestid) {
 	global $CFG, $DB;
-	
-	$course = NULL; 
-	
+
+	$course = NULL;
+
     $sql = "
 			SELECT 
 			    enl.courseid
@@ -475,11 +475,11 @@ function enrol_request_get_course_from_request($enrolrequestid) {
 			    AND ent.enrolid = enl.id
 			    AND err.id =  ?
    			";
-	
+
 	if ($result = $DB->get_record_sql($sql, array($enrolrequestid))) {
 		$course = $DB->get_record('course', array('id' => $result->courseid), '*');
 	}
-	
+
 	return $course;
 }
 
@@ -490,9 +490,9 @@ function enrol_request_get_course_from_request($enrolrequestid) {
  */
 function enrol_request_get_enrollment_from_request($enrolrequestid) {
 	global $CFG, $DB;
-	
-	$enrollment = NULL; 
-	
+
+	$enrollment = NULL;
+
     $sql = "
 			SELECT 
 			    ent.id AS enrollmentid
@@ -503,25 +503,25 @@ function enrol_request_get_enrollment_from_request($enrolrequestid) {
 			    err.enrolrequestid = ent.id
 			    AND err.id =  ?
    			";
-	
+
 	if ($result = $DB->get_record_sql($sql, array($enrolrequestid))) {
 		$enrollment = $DB->get_record('enrol_request', array('id' => $result->enrollmentid), '*');
 	}
-	
+
 	return $enrollment;
 }
 
 /**
  * Get the course related to a question from an enrollment request
- * 
+ *
  * @param integer $questionid ID of a question from an enrollment request
  * @return object Course that the user is requesting enrollment
  */
 function enrol_request_get_course_from_question($questionid) {
 	global $CFG, $DB;
-	
+
 	$course = NULL; 
-	
+
     $sql = "
 			SELECT 
 				enl.courseid
@@ -534,25 +534,25 @@ function enrol_request_get_course_from_question($questionid) {
 				AND ent.enrolid = enl.id
 				AND erq.id = ?
    			";
-	
+
 	if ($result = $DB->get_record_sql($sql, array($questionid))) {
 		$course = $DB->get_record('course', array('id' => $result->courseid), '*');
 	}
-	
+
 	return $course;
 }
 
 /**
  * Get the enrollment related to a question from an enrollment request
- * 
+ *
  * @param integer $questionid ID of a question from an enrollment request
- * @return object Enrollment related to a question 
+ * @return object Enrollment related to a question
  */
 function enrol_request_get_enrollment_from_question($questioid) {
 	global $CFG, $DB;
-	
-	$enrollment = NULL; 
-	
+
+	$enrollment = NULL;
+
     $sql = "
 			SELECT 
 			    ent.id AS enrollmentid
@@ -563,11 +563,11 @@ function enrol_request_get_enrollment_from_question($questioid) {
 			    erq.enrolrequestid = ent.id
 			    AND erq.id =  ?
    			";
-	
+
 	if ($result = $DB->get_record_sql($sql, array($questioid))) {
 		$enrollment = $DB->get_record('enrol_request', array('id' => $result->enrollmentid), '*');
 	}
-	
+
 	return $enrollment;
 }
 
@@ -578,9 +578,9 @@ function enrol_request_get_enrollment_from_question($questioid) {
  */
 function enrol_request_get_enrol_from_request($enrolrequestid) {
 	global $CFG, $DB;
-	
+
 	$enrol = NULL; 
-	
+
     $sql = "
 			SELECT 
 			    enr.id AS enrolid
@@ -593,55 +593,55 @@ function enrol_request_get_enrol_from_request($enrolrequestid) {
 			    AND ent.enrolid = enr.id
 			    AND err.id =  ?
    			";
-	
+
 	if ($result = $DB->get_record_sql($sql, array($enrolrequestid))) {
 		$enrol = $DB->get_record('enrol', array('id' => $result->enrolid), '*');
 	}
-	
+
 	return $enrol;
 }
 
 //TODO
 function enrol_request_display_user_profile($userid){
 	global $CFG, $DB, $OUTPUT;
-		
+
 	if (!$user = $DB->get_record("user", array("id" => $userid)) ) {
 		error("No such user in this course");
 	}
-	
+
 	$hiddenfields = array_flip(explode(',', $CFG->hiddenuserfields));
-	
+
 	echo '<div class="userprofile">';
 
 	// Print the standard content of this page, the basic profile info
 	echo $OUTPUT->heading(fullname($user));
-	
+
 	echo '<div class="userprofilebox clearfix"><div class="profilepicture">';
 	echo $OUTPUT->user_picture($user, array('size'=>100));
 	echo '</div>';
-	
+
 	echo '<div class="descriptionbox"><div class="description">';
 	// Print the description
-	
+
 	if ($user->description && !isset($hiddenfields['description'])) {
         $user->description = file_rewrite_pluginfile_urls($user->description, 'pluginfile.php', $usercontext->id, 'user', 'profile', null);
         $options = array('overflowdiv'=>true);
         echo format_text($user->description, $user->descriptionformat, $options);
 	}
 	echo '</div>';
-	
-	
+
+
 	// Print all the little details in a list
 	echo '<table class="list" summary="">';
-	
+
 	if (! isset($hiddenfields['country']) && $user->country) {
 	    enrol_request_print_row(get_string('country') . ':', get_string($user->country, 'countries'));
 	}
-	
+
 	if (! isset($hiddenfields['city']) && $user->city) {
 	    enrol_request_print_row(get_string('city') . ':', $user->city);
 	}
-	
+
     if ($user->address) {
         enrol_request_print_row(get_string("address").":", "$user->address");
     }
@@ -651,10 +651,10 @@ function enrol_request_display_user_profile($userid){
     if ($user->phone2) {
         enrol_request_print_row(get_string("phone2").":", "$user->phone2");
     }
-	
+
 	// print email
     enrol_request_print_row(get_string("email").":", obfuscate_mailto($user->email, ''));
-	
+
 	if ($user->url && !isset($hiddenfields['webpage'])) {
 	    $url = $user->url;
 	    if (strpos($user->url, '://') === false) {
@@ -662,11 +662,11 @@ function enrol_request_display_user_profile($userid){
 	    }
 	    enrol_request_print_row(get_string("webpage") .":", '<a href="'.s($url).'">'.s($user->url).'</a>');
 	}
-	
+
 	if ($user->icq && !isset($hiddenfields['icqnumber'])) {
 	    enrol_request_print_row(get_string('icqnumber').':',"<a href=\"http://web.icq.com/wwp?uin=".urlencode($user->icq)."\">".s($user->icq)." <img src=\"http://web.icq.com/whitepages/online?icq=".urlencode($user->icq)."&amp;img=5\" alt=\"\" /></a>");
 	}
-	
+
 	if ($user->skype && !isset($hiddenfields['skypeid'])) {
 	    enrol_request_print_row(get_string('skypeid').':','<a href="callto:'.urlencode($user->skype).'">'.s($user->skype).
 	        ' <img src="http://mystatus.skype.com/smallicon/'.urlencode($user->skype).'" alt="'.get_string('status').'" '.
@@ -681,11 +681,11 @@ function enrol_request_display_user_profile($userid){
 	if ($user->msn && !isset($hiddenfields['msnid'])) {
 	    enrol_request_print_row(get_string('msnid').':', s($user->msn));
 	}
-	
+
 	/// Print the Custom User Fields
 	enrol_request_profile_display_fields($user->id);
-	
-	
+
+
 	if (!isset($hiddenfields['mycourses'])) {
 	    if ($mycourses = enrol_get_all_users_courses($user->id, true, NULL, 'visible DESC,sortorder ASC')) {
 	        $shown=0;
@@ -694,7 +694,7 @@ function enrol_request_display_user_profile($userid){
 	            if ($mycourse->category) {
 	                $class = '';
 	                if ($mycourse->visible == 0) {
-						$context = context_course::instance($mycourse->id);						
+						$context = context_course::instance($mycourse->id);
 	                    if (!has_capability('moodle/course:viewhiddencourses', $context)) {
 	                        continue;
 	                    }
@@ -727,15 +727,15 @@ function enrol_request_display_user_profile($userid){
 	    }
 	    enrol_request_print_row(get_string("lastaccess").":", $datestring);
 	}
-	
+
 	if (!isset($hiddenfields['suspended'])) {
 	    if ($user->suspended) {
 	        enrol_request_print_row('', get_string('suspended', 'auth'));
 	    }
 	}
-	
+
 	echo "</table></div></div>";
-	
+
 	echo '</div>';  // userprofile class
 }
 
@@ -772,24 +772,24 @@ function enrol_request_manage_process_request($enrolrequest) {
 
 	$notified = optional_param_array('notified', 0, PARAM_RAW);
 	$oldstatus = optional_param_array('oldstatus', 0, PARAM_RAW);
-	
+
 	$enrollment = $DB->get_record('enrol', array('id'=>$enrolrequest->enrolid));
-	$requestcourse = $DB->get_record('course', array('id'=>$enrollment->courseid));	
+	$requestcourse = $DB->get_record('course', array('id'=>$enrollment->courseid));
 
 	if ($notified) {
 		$notified = array_flip($notified);
 	}
-	
+
 	// First, process the changed status, then notify users with email associated with their current status, then save object
 	if ($oldstatus) {
 	    foreach ($oldstatus as $rid => $sid) {
 	        $updateobj = NULL;
-			
+
 	        // Determine if the status was changed
 	        $itemstatus = optional_param('status-'.$rid, 0, PARAM_INT);
 	        if ($itemstatus != $sid) {
 				$updateobj = $DB->get_record('enrol_request_requests', array('id' => $rid));
-				
+
 				$updateobj->status = $itemstatus;
 				$updateobj->timeselected = time();
 				$updateobj->notified = time();
@@ -809,7 +809,7 @@ function enrol_request_manage_process_request($enrolrequest) {
 	        }
 	    }
 	}
-	
+
 	if (!empty($errors)) {
 		/// Print any errors found to user
 		$displaystr = 'Errors Occured with Saving Status:<br/>';
@@ -865,30 +865,30 @@ function enrol_request_update_request_status($requestobj, $modinst = NULL, $requ
 			// Enrolled status, enroll directly into course
             case STATUS_ENROLLED:
 			// Enrolled No INDES status, enroll directly into course
-            case STATUS_ENROLLED_NO_INDES:			
+            case STATUS_ENROLLED_NO_INDES:
 			// Paid status, enroll directly into course
             case STATUS_PAID:
                 $requestee = $DB->get_record('user', array('id' => $requestobj->userid));
-				
+
 		        $student = get_archetype_roles('student');
 		        $student = reset($student);
-				
+
 				// enrol instance
 				$enrol = enrol_request_get_enrol_from_request($requestobj->id);
-				
+
 				// Enrollment plugin
 				$plugin = enrol_get_plugin('request');
 				$plugin->enrol_user($enrol, $requestee->id, $student->id, time());
-				
+
                 break;
 			case STATUS_SELECTED:
-			case STATUS_SELECTED_SCHOLARSHIP:				
+			case STATUS_SELECTED_SCHOLARSHIP:
             // Selected status, allow entry into course which may require payment
             // via enrollment plugin.  Do nothing here
             case STATUS_WAITING_LIST:
-            // Waiting list status, do nothing			
+            // Waiting list status, do nothing
 			case STATUS_PAYMENT_NOT_RECEIVED:
-			// Payment Not Received status, do nothing			
+			// Payment Not Received status, do nothing
 			case STATUS_EARLY_BIRD:
 			// Payment Received Early status, do nothing
         }
@@ -904,16 +904,16 @@ function date2_human_format($timestamp, $lang){
     $actualmonth = date('m', $timestamp);
     $actualyear = date('Y', $timestamp);
     $actualmonth = get_string("month".$actualmonth, 'certificate');
-    
+
     if('ES' === strtoupper($lang)){
         $date = $actualday.' '.get_string('of_month', 'certificate').' '.$actualmonth.' '.get_string('of_year', 'certificate').' '.$actualyear;
     }elseif('EN' === strtoupper($lang)){
-        $date = $actualmonth.' '.$actualday.', '.$actualyear;             
+        $date = $actualmonth.' '.$actualday.', '.$actualyear;
     }elseif('PT_BR' === strtoupper($lang)){
         $date = $actualday.' '.get_string('from', 'certificate').' '.$actualmonth.' '.get_string('of_year', 'certificate').' '.$actualyear;
     }elseif('FR' == strtoupper($lang)){
         $date = $actualday.' '.$actualmonth.' '.$actualyear;
-    }   
+    }
 
     return $date;
 }
@@ -922,7 +922,7 @@ function date2_human_format($timestamp, $lang){
 /*
  * $a->recipientfullname, your pending request for enrollment into course: courseurl\">$a->coursefullname has been updated.
  * Your status has been changed to $a->status.
- * 
+ *
  * /
 
 /**
@@ -943,7 +943,7 @@ function enrol_request_notify_user($updateobj, $requestcourse, &$errors) {
 
 	$statusshort = 'pending';
 	$statusname = get_string('status'.$updateobj->status, 'enrol_request');
-    
+
     $recipient = $DB->get_record('user', array('id' => $updateobj->userid));
 
     $emailparams = new stdClass();
@@ -956,14 +956,14 @@ function enrol_request_notify_user($updateobj, $requestcourse, &$errors) {
     }else{
         $emailparams->lang          = strtoupper($requestcourse->lang);
     }
-        
+
     $startdate = date2_human_format($requestcourse->startdate, $emailparams->lang);
     $emailparams->startdate         = $startdate;
 
     $actualtimestamp = time()+date("Z");
     $actualdate = date2_human_format($actualtimestamp, $emailparams->lang);
     $emailparams->actualdate        = $actualdate;
-    
+
     $courseformatoptions = course_get_format($requestcourse->id)->get_course();
     if(isset($courseformatoptions->numsections)){
         $numSections = $courseformatoptions->numsections;
@@ -977,7 +977,7 @@ function enrol_request_notify_user($updateobj, $requestcourse, &$errors) {
             $statusshort = 'selected';
             $enrolinstances = enrol_get_instances($requestcourse->id, true);
             foreach ($enrolinstances as $courseenrolinstance) {
-                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "stripepayment") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {
+                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "striperequest") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {
                     $enrolenddate = date2_human_format($courseenrolinstance->enrolenddate, $emailparams->lang);
                     $emailparams->enrolenddate = $enrolenddate;
                     $emailparams->cost = $courseenrolinstance->cost;
@@ -992,14 +992,14 @@ function enrol_request_notify_user($updateobj, $requestcourse, &$errors) {
             $statusshort = 'selectedscholarship';
             $enrolinstances = enrol_get_instances($requestcourse->id, true);
             foreach ($enrolinstances as $courseenrolinstance) {
-                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "stripepayment") && trim(strtoupper($courseenrolinstance->name)) == "SCHOLARSHIP") {
+                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "striperequest") && trim(strtoupper($courseenrolinstance->name)) == "SCHOLARSHIP") {
                     $enrolenddate = date2_human_format($courseenrolinstance->enrolenddate, $emailparams->lang);
                     $emailparams->enrolenddate = $enrolenddate;
                     $emailparams->cost = $courseenrolinstance->cost;
-                    $emailparams->cost_transfer = $courseenrolinstance->customint1;						
+                    $emailparams->cost_transfer = $courseenrolinstance->customint1;
 					break;
                 }
-            }           
+            }
             $subject = get_string('emailsubjectselectedscholarship', 'enrol_request', $emailparams);
             $msgbody = get_string('emailbodyhtmlselectedscholarship', 'enrol_request', $emailparams);
             break;
@@ -1007,11 +1007,11 @@ function enrol_request_notify_user($updateobj, $requestcourse, &$errors) {
             $statusshort = 'notselected';
             $enrolinstances = enrol_get_instances($requestcourse->id, true);
             foreach ($enrolinstances as $courseenrolinstance) {
-                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "stripepayment") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {					
+                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "striperequest") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {
                     $enrolenddate = date2_human_format($courseenrolinstance->enrolenddate, $emailparams->lang);
                     $emailparams->enrolenddate = $enrolenddate;
                     $emailparams->cost = $courseenrolinstance->cost;
-                    $emailparams->cost_transfer = $courseenrolinstance->customint1;				
+                    $emailparams->cost_transfer = $courseenrolinstance->customint1;
                     break;
                 }
             }
@@ -1022,11 +1022,11 @@ function enrol_request_notify_user($updateobj, $requestcourse, &$errors) {
             $statusshort = 'paid';
             $enrolinstances = enrol_get_instances($requestcourse->id, true);
             foreach ($enrolinstances as $courseenrolinstance) {
-                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "stripepayment") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {					
+                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "striperequest") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {
                     $enrolenddate = date2_human_format($courseenrolinstance->enrolenddate, $emailparams->lang);
                     $emailparams->enrolenddate = $enrolenddate;
                     $emailparams->cost = $courseenrolinstance->cost;
-                    $emailparams->cost_transfer = $courseenrolinstance->customint1;				
+                    $emailparams->cost_transfer = $courseenrolinstance->customint1;
                     break;
                 }
             }
@@ -1037,14 +1037,14 @@ function enrol_request_notify_user($updateobj, $requestcourse, &$errors) {
             $statusshort = 'enrolled';
             $enrolinstances = enrol_get_instances($requestcourse->id, true);
             foreach ($enrolinstances as $courseenrolinstance) {
-                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "stripepayment") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {					
+                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "striperequest") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {
                     $enrolenddate = date2_human_format($courseenrolinstance->enrolenddate, $emailparams->lang);
                     $emailparams->enrolenddate = $enrolenddate;
                     $emailparams->cost = $courseenrolinstance->cost;
-                    $emailparams->cost_transfer = $courseenrolinstance->customint1;				
+                    $emailparams->cost_transfer = $courseenrolinstance->customint1;
                     break;
                 }
-            }            
+            }
 			$subject = get_string('emailsubjectenrolled', 'enrol_request', $emailparams);
             $msgbody = get_string('emailbodyhtmlenrolled', 'enrol_request', $emailparams);
             break;
@@ -1052,26 +1052,26 @@ function enrol_request_notify_user($updateobj, $requestcourse, &$errors) {
             $statusshort = 'enrolled_no_indes';
             $enrolinstances = enrol_get_instances($requestcourse->id, true);
             foreach ($enrolinstances as $courseenrolinstance) {
-                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "stripepayment") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {					
+                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "striperequest") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {
                     $enrolenddate = date2_human_format($courseenrolinstance->enrolenddate, $emailparams->lang);
                     $emailparams->enrolenddate = $enrolenddate;
                     $emailparams->cost = $courseenrolinstance->cost;
-                    $emailparams->cost_transfer = $courseenrolinstance->customint1;				
+                    $emailparams->cost_transfer = $courseenrolinstance->customint1;
                     break;
                 }
-            }            
+            }
 			$subject = get_string('emailsubjectenrollednoindes', 'enrol_request', $emailparams);
             $msgbody = get_string('emailbodyhtmlenrollednoindes', 'enrol_request', $emailparams);
-            break;			
+            break;
         case STATUS_PENDING:
             $statusshort = 'pending';
             $enrolinstances = enrol_get_instances($requestcourse->id, true);
             foreach ($enrolinstances as $courseenrolinstance) {
-                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "stripepayment") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {					
+                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "striperequest") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {
                     $enrolenddate = date2_human_format($courseenrolinstance->enrolenddate, $emailparams->lang);
                     $emailparams->enrolenddate = $enrolenddate;
                     $emailparams->cost = $courseenrolinstance->cost;
-                    $emailparams->cost_transfer = $courseenrolinstance->customint1;				
+                    $emailparams->cost_transfer = $courseenrolinstance->customint1;
                     break;
                 }
             }
@@ -1082,11 +1082,11 @@ function enrol_request_notify_user($updateobj, $requestcourse, &$errors) {
             $statusshort = 'waitinglist';
             $enrolinstances = enrol_get_instances($requestcourse->id, true);
             foreach ($enrolinstances as $courseenrolinstance) {
-                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "stripepayment") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {					
+                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "striperequest") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {
                     $enrolenddate = date2_human_format($courseenrolinstance->enrolenddate, $emailparams->lang);
                     $emailparams->enrolenddate = $enrolenddate;
                     $emailparams->cost = $courseenrolinstance->cost;
-                    $emailparams->cost_transfer = $courseenrolinstance->customint1;				
+                    $emailparams->cost_transfer = $courseenrolinstance->customint1;
                     break;
                 }
             }
@@ -1097,11 +1097,11 @@ function enrol_request_notify_user($updateobj, $requestcourse, &$errors) {
             $statusshort = 'paymentnotreceived';
             $enrolinstances = enrol_get_instances($requestcourse->id, true);
             foreach ($enrolinstances as $courseenrolinstance) {
-                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "stripepayment") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {					
+                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "striperequest") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {
                     $enrolenddate = date2_human_format($courseenrolinstance->enrolenddate, $emailparams->lang);
                     $emailparams->enrolenddate = $enrolenddate;
                     $emailparams->cost = $courseenrolinstance->cost;
-                    $emailparams->cost_transfer = $courseenrolinstance->customint1;				
+                    $emailparams->cost_transfer = $courseenrolinstance->customint1;
                     break;
                 }
             }
@@ -1112,21 +1112,21 @@ function enrol_request_notify_user($updateobj, $requestcourse, &$errors) {
             $statusshort = 'earlybird';
             $enrolinstances = enrol_get_instances($requestcourse->id, true);
             foreach ($enrolinstances as $courseenrolinstance) {
-                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "stripepayment") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {					
+                if (($courseenrolinstance->enrol == "paypalrequest" || $courseenrolinstance->enrol == "striperequest") && trim(strtoupper($courseenrolinstance->name)) == "REGULAR") {
                     $enrolenddate = date2_human_format($courseenrolinstance->enrolenddate, $emailparams->lang);
                     $emailparams->enrolenddate = $enrolenddate;
                     $emailparams->cost = $courseenrolinstance->cost;
-                    $emailparams->cost_transfer = $courseenrolinstance->customint1;				
+                    $emailparams->cost_transfer = $courseenrolinstance->customint1;
                     break;
                 }
             }
             $subject = get_string('emailsubjectearlybird', 'enrol_request', $emailparams);
             $msgbody = get_string('emailbodyhtmlearlybird', 'enrol_request', $emailparams);
-            break;				
+            break;
 	}
-	
+
     $bodyhtml = '<head>';
-    
+
     $bodyhtml .= '</head>'.
                  "\n<body id=\"enrolrequest_notify\">\n<div id=\"page\">\n".
                  $msgbody.
@@ -1137,7 +1137,7 @@ function enrol_request_notify_user($updateobj, $requestcourse, &$errors) {
         $errors[] = 'Failed to send email to user: '.fullname($recipient);
         return NULL;
     }
-    
+
     return time();
 }
 
@@ -1149,10 +1149,10 @@ function enrol_request_notify_user($updateobj, $requestcourse, &$errors) {
  **/
 function enrol_request_delete_request($requestid) {
 	global $USER, $DB;
-	
+
 	if ($DB->record_exists('enrol_request_requests', array('id' => $requestid ))) {
 		$DB->delete_records('enrol_request_requests', array('id' => $requestid ));
-		
+
 		if ($DB->record_exists('enrol_request_responses', array('requestid' => $requestid ))) {
 			$DB->delete_records('enrol_request_responses', array('requestid' => $requestid ));
 		}
@@ -1173,9 +1173,9 @@ function enrol_request_add_question($formdata) {
 		$record = new stdClass();
 		$record->enrolrequestid	= $formdata->enrolrequestid;
 		$record->questiontext	= $formdata->questiontext;
-		
+
 		$DB->insert_record('enrol_request_questions', $record, false);
-			
+
 	} else {
 		print_error('Question data not well defined!');
 	}
@@ -1189,17 +1189,17 @@ function enrol_request_add_question($formdata) {
  **/
 function enrol_request_edit_question($formdata) {
 	global $USER, $DB;
-	
+
 	if($formdata && $formdata->id && $DB->record_exists('enrol_request', array('id' => $formdata->enrolrequestid))){
 		$question = $DB->get_record('enrol_request_questions', array('id' => $formdata->id));
-			
+
 	} else {
 		print_error('Question data not well defined!');
 	}
-	
+
 	if($question){
 		$question->questiontext = $formdata->questiontext;
-		
+
 		$DB->update_record('enrol_request_questions', $question);
 	}
 }
@@ -1212,10 +1212,10 @@ function enrol_request_edit_question($formdata) {
  **/
 function enrol_request_delete_question($questionid) {
 	global $USER, $DB;
-	
+
 	if ($DB->record_exists('enrol_request_questions', array('id' => $questionid ))) {
 		$DB->delete_records('enrol_request_questions', array('id' => $questionid ));
-		
+
 		if ($DB->record_exists('enrol_request_responses', array('questionid' => $questionid ))) {
 			$DB->delete_records('enrol_request_responses', array('questionid' => $questionid ));
 		}
@@ -1225,26 +1225,26 @@ function enrol_request_delete_question($questionid) {
 /**
  * Change the status of an enrollment request to enrolled.
  * This method is important for the integration between enrol_request and enrol_paypalrequest
- * 
+ *
  * @param object $course
  * @param object $user
  * @return boolean Was the status changed?
  **/
 function enrol_request_change_status_enrolled($course, $user) {
 	global $CFG, $DB;
-	
+
 	$status_changed = FALSE;
-	
+
 	if ($enrol = $DB->get_record('enrol', array('courseid' => $course->id, 'enrol' => 'request', 'status' => 0))) {
 		if ($enrolrequest = $DB->get_record('enrol_request', array('enrolid' => $enrol->id))) {
 			if ($userrequest = $DB->get_record('enrol_request_requests', array('enrolrequestid' => $enrolrequest->id, 'userid' => $user->id))) {
 				$userrequest->status = STATUS_ENROLLED;
 				$DB->update_record('enrol_request_requests', $userrequest);
-				
+
 				$status_changed = TRUE;
 			}
 		}
 	}
-	
+
 	return $status_changed;
 }
