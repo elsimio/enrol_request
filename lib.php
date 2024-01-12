@@ -655,7 +655,8 @@ function enrol_request_display_user_profile($userid){
 	// print email
     enrol_request_print_row(get_string("email").":", obfuscate_mailto($user->email, ''));
 
-	if ($user->url && !isset($hiddenfields['webpage'])) {
+    //Disabling old user profile fields 8/9/2022 Melvyn Gomez melvyng@openranger.com
+	/*if ($user->url && !isset($hiddenfields['webpage'])) {
 	    $url = $user->url;
 	    if (strpos($user->url, '://') === false) {
 	        $url = 'http://'. $url;
@@ -680,7 +681,8 @@ function enrol_request_display_user_profile($userid){
 	}
 	if ($user->msn && !isset($hiddenfields['msnid'])) {
 	    enrol_request_print_row(get_string('msnid').':', s($user->msn));
-	}
+	}*/
+//Disabling old user profile fields 8/9/2022 Melvyn Gomez melvyng@openranger.com
 
 	/// Print the Custom User Fields
 	enrol_request_profile_display_fields($user->id);
@@ -805,7 +807,7 @@ function enrol_request_manage_process_request($enrolrequest) {
 	        }
 	        if (!empty($updateobj)) {
 				// Update the request
-				enrol_request_update_request_status($updateobj, $enrolrequest, $requestcourse, $errors);
+				enrol_request_update_request_status($updateobj, $errors);
 	        }
 	    }
 	}
@@ -842,11 +844,12 @@ function enrol_request_manage_process_request($enrolrequest) {
  * @param bool  $process    True to enrol, false to do nothing with changed status
  * @return bool true if record updated and no errors in notification/enrollment, false otherwise
  **/
-function enrol_request_update_request_status($requestobj, $modinst = NULL, $requestcourse = NULL, &$errors, $process = true) {
-    global $DB, $USER;
+
+function enrol_request_update_request_status(object $requestobj, array &$errors, ?string $modinst = null, ?object $requestcourse = null, bool $process = true): bool {
+    global $DB;
 
     if ($process) {
-		$oldstatus = $DB->get_field('enrol_request_requests', 'status', array('id' => $requestobj->id));
+        $oldstatus = $DB->get_field('enrol_request_requests', 'status', ['id' => $requestobj->id]);
     }
 
     if (!$DB->update_record('enrol_request_requests', $requestobj)) {
@@ -854,43 +857,42 @@ function enrol_request_update_request_status($requestobj, $modinst = NULL, $requ
         return false;
     }
 
-    // Logic to properly handle new status for request, if status was changed
-    if ($process && ($requestobj->status != $oldstatus)) {
+    // Logic to properly handle new status for the request if the status was changed
+    if ($process && ($requestobj->status !== $oldstatus)) {
         switch ($requestobj->status) {
             // Pending status, no change
             case STATUS_PENDING:
-            // Not selected status, do nothing
+                // Not selected status, do nothing
             case STATUS_NOTSELECTED:
                 break;
-			// Enrolled status, enroll directly into course
+            // Enrolled status, enroll directly into the course
             case STATUS_ENROLLED:
-			// Enrolled No INDES status, enroll directly into course
+                // Enrolled No INDES status, enroll directly into the course
             case STATUS_ENROLLED_NO_INDES:
-			// Paid status, enroll directly into course
+                // Paid status, enroll directly into the course
             case STATUS_PAID:
-                $requestee = $DB->get_record('user', array('id' => $requestobj->userid));
+                $requestee = $DB->get_record('user', ['id' => $requestobj->userid]);
 
-		        $student = get_archetype_roles('student');
-		        $student = reset($student);
+                $student = get_archetype_roles('student');
+                $student = reset($student);
 
-				// enrol instance
-				$enrol = enrol_request_get_enrol_from_request($requestobj->id);
+                // enrol instance
+                $enrol = enrol_request_get_enrol_from_request($requestobj->id);
 
-				// Enrollment plugin
-				$plugin = enrol_get_plugin('request');
-				$plugin->enrol_user($enrol, $requestee->id, $student->id, time());
+                // Enrollment plugin
+                $plugin = enrol_get_plugin('request');
+                $plugin->enrol_user($enrol, $requestee->id, $student->id, time());
 
                 break;
-			case STATUS_SELECTED:
-			case STATUS_SELECTED_SCHOLARSHIP:
-            // Selected status, allow entry into course which may require payment
-            // via enrollment plugin.  Do nothing here
+            case STATUS_SELECTED:
+            case STATUS_SELECTED_SCHOLARSHIP:
+                // Selected status, allow entry into the course, which may require payment via the enrollment plugin. Do nothing here
             case STATUS_WAITING_LIST:
-            // Waiting list status, do nothing
-			case STATUS_PAYMENT_NOT_RECEIVED:
-			// Payment Not Received status, do nothing
-			case STATUS_EARLY_BIRD:
-			// Payment Received Early status, do nothing
+                // Waiting list status, do nothing
+            case STATUS_PAYMENT_NOT_RECEIVED:
+                // Payment Not Received status, do nothing
+            case STATUS_EARLY_BIRD:
+                // Payment Received Early status, do nothing
         }
     }
     return true;

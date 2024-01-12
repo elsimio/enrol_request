@@ -1,8 +1,8 @@
 <div id="page-admin-index">
 	<div class="box generalbox adminwarning">
 		<h2 style="text-align: center"><?php print_string("modulename", "enrol_request") ?></h2>
-		<p style="padding-left: 100px;"><?php print_string("status", "enrol_request") ?>: <strong><?php print_string("status".$request->status, "enrol_request") ?></strong></p>
-		<p style="padding-left: 100px;"><?php print_string("timesubmitted", "enrol_request") ?>: <strong><?php echo userdate($request->timesubmitted) ?></strong></p>
+		<p style="padding-left: 0px;"><?php print_string("status", "enrol_request") ?>: <strong><?php print_string("status".$request->status, "enrol_request") ?></strong></p>
+		<p style="padding-left: 0px;"><?php print_string("timesubmitted", "enrol_request") ?>: <strong><?php echo userdate($request->timesubmitted) ?></strong></p>
 
 <?php
 	if($request->status == STATUS_PENDING) {

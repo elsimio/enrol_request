@@ -23,9 +23,9 @@
  * Based on work of Michael Avelar <mavelar@moodlerooms.com> and Lucas Sa (lucas.sa@gmail.com)
  */
 
-$plugin->version   = 2020030301;        // The current plugin version (Date: YYYYMMDDXX)
+$plugin->version   = 2022080903;        // The current plugin version (Date: YYYYMMDDXX)
 $plugin->requires  = 2011112900;        // Requires this Moodle version
 $plugin->component = 'enrol_request'; // Full name of the plugin (used for diagnostics)
 $plugin->cron      = 180;
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = 'v3.8-r1';
+$plugin->release   = 'v4.1-r1';
